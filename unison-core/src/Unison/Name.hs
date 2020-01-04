@@ -26,7 +26,6 @@ module Unison.Name
     -- * Name API
   , asAbsolute
   , asRelative
-  , countDots
   , isAbsolute
   , isLower
   , isPrefixOf
@@ -241,13 +240,6 @@ asAbsolute n@Name{} | toText n == "." = Name ".."
                     | isAbsolute n    = n
                     | otherwise       = Name ("." <> toText n)
 asAbsolute (Name' _ names) = Name' Absolute names
-
--- | FIXME Syntax-specific
-countDots :: Name -> Int
-countDots = \case
-  Name name -> Text.count "." (Text.dropEnd 1 name)
-  Name' Absolute names -> length names
-  Name' Relative names -> length names - 1
 
 segments :: Name -> [NameSegment]
 segments (Name name) = fmap NameSegment.unsafeFromText (Text.splitOn "." name)
