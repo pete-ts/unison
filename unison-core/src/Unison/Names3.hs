@@ -37,14 +37,14 @@ data ResolutionFailure v a
 
 type ResolutionResult v a r = Either (Seq (ResolutionFailure v a)) r
 
--- For all names in `ns`, (ex: foo.bar.baz), generate the list of suffixes 
+-- For all names in `ns`, (ex: foo.bar.baz), generate the list of suffixes
 -- of that name [[foo.bar.baz], [bar.baz], [baz]]. Insert these suffixes
 -- into a multimap map along with their corresponding refs. Any suffix
 -- which is unique is added as an entry to `ns`.
 suffixify0 :: Names0 -> Names0
-suffixify0 ns = ns <> suffixNs 
+suffixify0 ns = ns <> suffixNs
   where
-  suffixNs = names0 (R.fromList uniqueTerms) (R.fromList uniqueTypes) 
+  suffixNs = names0 (R.fromList uniqueTerms) (R.fromList uniqueTypes)
   terms = List.multimap [ (n,ref) | (n0,ref) <- R.toList (terms0 ns), n <- Name.suffixes n0 ]
   types = List.multimap [ (n,ref) | (n0,ref) <- R.toList (types0 ns), n <- Name.suffixes n0 ]
   uniqueTerms = [ (n,ref) | (n, nubOrd -> [ref]) <- Map.toList terms ]
@@ -122,7 +122,7 @@ shadowing prio (Names current old) =
   Names (prio `unionLeftName0` current) (current <> old)
 
 makeAbsolute0:: Names0 -> Names0
-makeAbsolute0 = map0 Name.makeAbsolute
+makeAbsolute0 = map0 Name.asAbsolute
 
 -- do a prefix match on currentNames and, if no match, then check oldNames.
 lookupHQType :: HashQualified -> Names -> Set Reference
