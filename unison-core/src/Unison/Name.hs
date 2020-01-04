@@ -9,6 +9,11 @@ module Unison.Name
     Name
   , makeAbsolute
   , makeRelative
+  , AbsName
+  , asAbsName
+  , RelName
+  , asRelName
+  , unsafeAsRelName
     -- * Conversion functions
     -- ** To name
   , fromNameSegment
@@ -75,6 +80,13 @@ data Placement
   | Relative
   deriving stock (Eq, Ord)
 
+newtype AbsName
+  = AbsName (NonEmpty NameSegment)
+
+newtype RelName
+  = RelName (NonEmpty NameSegment)
+  deriving stock (Eq, Ord)
+
 -- | Construct an absolute name from a non-empty list of name segments.
 makeAbsolute :: NonEmpty NameSegment -> Name
 makeAbsolute = Name' Absolute
@@ -82,6 +94,24 @@ makeAbsolute = Name' Absolute
 -- | Construct a relative name from a non-empty list of name segments.
 makeRelative :: NonEmpty NameSegment -> Name
 makeRelative = Name' Relative
+
+asAbsName :: Name -> Maybe AbsName
+asAbsName name = do
+  guard (isAbsolute name)
+  pure (AbsName (segments1 name))
+
+asRelName :: Name -> Maybe RelName
+asRelName name = do
+  guard (isRelative name)
+  pure (RelName (segments1 name))
+
+-- | Unsafely coerce a name to a relative name. Calls error if the given name
+-- is absolute.
+unsafeAsRelName :: HasCallStack => Name -> RelName
+unsafeAsRelName name =
+  case asRelName name of
+    Nothing -> error ("unsafeAsRelName: " ++ show name)
+    Just name' -> name'
 
 -- | Render a name as text.
 --
@@ -223,6 +253,10 @@ segments :: Name -> [NameSegment]
 segments (Name name) = fmap NameSegment.unsafeFromText (Text.splitOn "." name)
 segments (Name' _ names) = toList names
 
+segments1 :: Name -> NonEmpty NameSegment
+segments1 (Name name) = NonEmpty.fromList (fmap NameSegment.unsafeFromText (Text.splitOn "." name))
+segments1 (Name' _ names) = names
+
 isLower :: Name -> Bool
 isLower = \case
   Name name -> Text.all Char.isLower (Text.take 1 name)
@@ -232,6 +266,11 @@ isAbsolute :: Name -> Bool
 isAbsolute (Name name) = Text.isPrefixOf "." name && name /= "."
 isAbsolute (Name' Absolute _) = True
 isAbsolute (Name' Relative _) = False
+
+isRelative :: Name -> Bool
+isRelative (Name' Relative _) = True
+isRelative (Name' Absolute _) = False
+isRelative name@Name{} = error ("isRelative: " ++ show name)
 
 -- | Compute all ways to split a relative name into a (possibly empty) prefix
 -- and suffix.
